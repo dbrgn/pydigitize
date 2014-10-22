@@ -1,33 +1,46 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""scan.py.
+"""pydigitize.
 
 Usage:
-    scan.py [-r RESOLUTION] [-d DEVICE] [-p PAGES] (img|doc)
+    scan.py [options]
 
 Options:
     -h --help      Show this help.
     --version      Show version.
-    -r RESOLUTION  Set the resolution [default: 300].
+
     -d DEVICE      Set the device [default: brother4:net1;dev0].
+    -r RESOLUTION  Set the resolution [default: 300].
+
     -p PAGES       Number of pages to scan [default: all pages from ADF]
+    -o OUTPUT      Output file or directory
+
+    --verbose      Verbose output
+    --debug        Debug output
 
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
 
 import sys
+import glob
 import datetime
+import os.path
+import logging
 
 import docopt
-from sh import cd, mkdir, scanimage, tiffcp, tiff2pdf, glob, mv
+from sh import cd, mkdir, scanimage, tiffcp, tiff2pdf, mv
 import sh; ocrmypdf = getattr(sh, 'OCRmyPDF.sh')
 
 
+logger = logging.getLogger('pydigitize')
+
+
 VALID_RESOLUTIONS = (100, 200, 300, 400, 600)
-OUTPUT_BASE = '/home/danilo/brscan/%s' % datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+OUTPUT_BASE = '/home/danilo/brscan'
+TIMESTAMP = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 
 
-def scan(resolution, device):
+def scan(resolution, device, output):
 
     # Validate args
     def _invalid_res():
@@ -38,11 +51,19 @@ def scan(resolution, device):
             _invalid_res()
     except ValueError:
         _invalid_res()
+    if os.path.isdir(output):
+        output_path = os.path.join(output, TIMESTAMP + '.pdf')
+    elif os.path.isdir(os.path.dirname(output)):
+        output_path = output
+    else:
+        print('Output directory must already exist.')
+        sys.exit(1)
 
     # Prepare directories
     print('Creating directory...')
-    mkdir(OUTPUT_BASE, parents=True)
-    cd(OUTPUT_BASE)
+    workdir = os.path.join(OUTPUT_BASE, TIMESTAMP)
+    mkdir(workdir, parents=True)
+    cd(workdir)
 
     # Scan pages
     print('Scanning...')
@@ -54,11 +75,14 @@ def scan(resolution, device):
         'resolution': resolution,
         '_ok_code': [0, 7],
     }
+    logger.debug('Scanimage args: %r' % scanimage_args)
     scanimage(**scanimage_args)
 
     # Combine tiffs into single multi-page tiff
     print('Combining image files...')
-    tiffcp(glob('out*.tif'), 'output.tif', c='lzw')
+    files = sorted(glob.glob('out*.tif'))
+    logger.debug('Joining %r', files)
+    tiffcp(files, 'output.tif', c='lzw')
 
     # Convert tiff to pdf
     print('Converting to PDF...')
@@ -72,11 +96,18 @@ def scan(resolution, device):
     # Move file
     print('Moving resulting file...')
     cd('..')
-    mv('{0}/clean.pdf {0}.pdf'.format(OUTPUT_BASE))
+    mv('%s/clean.pdf' % workdir, output_path)
 
-    print('Done: %s.pdf' % OUTPUT_BASE)
+    print('Done: %s' % output_path)
 
 if __name__ == '__main__':
-    args = docopt.docopt(__doc__, version='scan.py 0.1')
-    print(args)
-    scan(resolution=args['-r'], device=args['-d'])
+    args = docopt.docopt(__doc__, version='pydigitize 0.1')
+    if args['--debug']:
+        logging.basicConfig(level=logging.DEBUG)
+    elif args['--verbose']:
+        logging.basicConfig(level=logging.INFO)
+    else:
+        logging.basicConfig(level=logging.WARNING)
+    logger.debug('Command line args: %r' % args)
+    default_output = os.path.join(OUTPUT_BASE, TIMESTAMP)
+    scan(resolution=args['-r'], device=args['-d'], output=args['-o'] or default_output)
