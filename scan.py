@@ -2,7 +2,7 @@
 """pydigitize.
 
 Usage:
-    scan.py OUTPUT [options]
+    scan.py [options] [OUTPUT]
 
 Examples:
     scan.py out/
@@ -13,12 +13,13 @@ Options:
     -h --help      Show this help.
     --version      Show version.
 
+    -p PROFILE     The profile to use.
+
     -n NAME        Text that will be incorporated into the filename.
 
     -d DEVICE      Set the device [default: brother4:net1;dev0].
     -r RESOLUTION  Set the resolution [default: 300].
-
-    -p PAGES       Number of pages to scan [default: all pages from ADF]
+    -c PAGES       Page count to scan [default: all pages from ADF]
 
     --skip-ocr     Don't run OCR / straightening / cleanup step.
 
@@ -26,15 +27,16 @@ Options:
     --debug        Debug output
 
 """
-import sys
-import glob
 import datetime
-import os.path
+import glob
 import logging
+import os.path
+import sys
 
 import docopt
 from sh import cd, mkdir, mv
 from slugify import slugify
+import toml
 
 try:
     from sh import scanimage
@@ -213,8 +215,44 @@ if __name__ == '__main__':
     logger.debug('Command line args: %r' % args)
     default_output = os.path.join(OUTPUT_BASE, TIMESTAMP)
 
-    scan = Scan(resolution=args['-r'],
-                device=args['-d'],
-                output=args['OUTPUT'] or default_output,
-                name=args['-n'])
-    scan.process(skip_ocr=args['--skip-ocr'])
+    # Default args
+    kwargs = {
+        'output': default_output,
+    }
+    skip_ocr = False
+
+    # Process profile
+    if args['-p'] is not None:
+        # Load profiles
+        with open('profiles.toml', 'r') as conffile:
+            profiles = toml.loads(conffile.read())
+
+        # Find profile
+        profile = profiles
+        profile_name = args['-p']
+        profile_parts = profile_name.split('.')
+        for part in profile_parts:
+            found = profile.get(part)
+            if found is None:
+                print('Profile not found: {}'.format(profile_name))
+                sys.exit(1)
+            profile = found
+
+        # Update args
+        if 'path' in profile:
+            kwargs['output'] = profile['path']
+        if 'name' in profile:
+            kwargs['name'] = profile['name']
+        if 'ocr' in profile:
+            skip_ocr = not bool(profile['ocr'])
+
+    # Argument overrides
+    kwargs['resolution'] = args['-r']
+    kwargs['device'] = args['-d']
+    if args['OUTPUT']:
+        kwargs['output'] = args['OUTPUT']
+    if args['--skip-ocr'] is True:
+        skip_ocr = True
+
+    scan = Scan(**kwargs)
+    scan.process(skip_ocr=skip_ocr)
