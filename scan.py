@@ -4,12 +4,16 @@
 Usage:
     scan.py OUTPUT [options]
 
-Example:
+Examples:
     scan.py out/
+    scan.py out/document.pdf
+    scan.py out/ -n document
 
 Options:
     -h --help      Show this help.
     --version      Show version.
+
+    -n NAME        Text that will be incorporated into the filename.
 
     -d DEVICE      Set the device [default: brother4:net1;dev0].
     -r RESOLUTION  Set the resolution [default: 300].
@@ -28,6 +32,7 @@ import logging
 
 import docopt
 from sh import cd, mkdir, mv
+from slugify import slugify
 
 try:
     from sh import scanimage
@@ -70,7 +75,7 @@ TIMESTAMP = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 
 class Scan:
 
-    def __init__(self, resolution, device, output):
+    def __init__(self, resolution, device, output, name=None):
         """
         Initialize scan class.
 
@@ -98,7 +103,11 @@ class Scan:
 
         # Validate and store output path
         if os.path.isdir(output):
-            output_path = os.path.join(output, TIMESTAMP + '.pdf')
+            if name is None:
+                filename = '{}.pdf'.format(TIMESTAMP)
+            else:
+                filename = '{}-{}.pdf'.format(TIMESTAMP, slugify(name, to_lower=True))
+            output_path = os.path.join(output, filename)
         elif os.path.dirname(output) == '' or os.path.isdir(os.path.dirname(output)):
             output_path = output
         else:
@@ -198,5 +207,8 @@ if __name__ == '__main__':
     logger.debug('Command line args: %r' % args)
     default_output = os.path.join(OUTPUT_BASE, TIMESTAMP)
 
-    scan = Scan(resolution=args['-r'], device=args['-d'], output=args['OUTPUT'] or default_output)
+    scan = Scan(resolution=args['-r'],
+                device=args['-d'],
+                output=args['OUTPUT'] or default_output,
+                name=args['-n'])
     scan.process()

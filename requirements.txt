@@ -1,3 +1,4 @@
 docopt<=1.0
 sh>=1.09,<2
 ocrmypdf>=5,<6
+awesome-slugify>=1.6,<2
