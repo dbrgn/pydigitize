@@ -20,6 +20,8 @@ Options:
 
     -p PAGES       Number of pages to scan [default: all pages from ADF]
 
+    --skip-ocr     Don't run OCR / straightening / cleanup step.
+
     --verbose      Verbose output
     --debug        Debug output
 
@@ -75,7 +77,7 @@ TIMESTAMP = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 
 class Scan:
 
-    def __init__(self, resolution, device, output, name=None):
+    def __init__(self, *, resolution, device, output, name=None):
         """
         Initialize scan class.
 
@@ -171,7 +173,7 @@ class Scan:
         print('Running OCR...')
         ocrmypdf('-l', 'deu', '-d', '-c', 'output.pdf', 'clean.pdf')
 
-    def process(self):
+    def process(self, *, skip_ocr=False):
         # Prepare directories
         self.prepare_directories()
         cd(self.workdir)
@@ -186,12 +188,16 @@ class Scan:
         self.convert_tiff_to_pdf()
 
         # Do OCR
-        self.do_ocr()
+        if skip_ocr is False:
+            self.do_ocr()
+            filename = 'clean.pdf'
+        else:
+            filename = 'output.pdf'
 
         # Move file
         print('Moving resulting file...')
         cd('..')
-        mv('%s/clean.pdf' % self.workdir, self.output_path)
+        mv('{}/{}'.format(self.workdir, filename), self.output_path)
 
         print('Done: %s' % self.output_path)
 
@@ -211,4 +217,4 @@ if __name__ == '__main__':
                 device=args['-d'],
                 output=args['OUTPUT'] or default_output,
                 name=args['-n'])
-    scan.process()
+    scan.process(skip_ocr=args['--skip-ocr'])
