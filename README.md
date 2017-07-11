@@ -6,3 +6,4 @@ Requirements:
 - OCRmyPDF 3.x
 - libtiff 4.x
 - sane 1.x
+- unpaper

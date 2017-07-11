@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """pydigitize.
 
 Usage:
     scan.py OUTPUT [options]
+
+Example:
+    scan.py out/
 
 Options:
     -h --help      Show this help.
@@ -25,7 +27,37 @@ import os.path
 import logging
 
 import docopt
-from sh import cd, mkdir, scanimage, tiffcp, tiff2pdf, mv, ocrmypdf
+from sh import cd, mkdir, mv
+
+try:
+    from sh import scanimage
+except ImportError:
+    print('Error: scanimage command not found. Please install sane.')
+    sys.exit(1)
+
+try:
+    from sh import tiffcp, tiff2pdf
+except ImportError:
+    print('Error: tiffcp / tiff2pdf commands not found. Please install libtiff.')
+    sys.exit(1)
+
+try:
+    from sh import ocrmypdf
+except ImportError:
+    print('Error: ocrmypdf command not found. Please install ocrmypdf.')
+    sys.exit(1)
+
+try:
+    from sh import tesseract  # noqa
+except ImportError:
+    print('Error: tesseract command not found. Please install tesseract.')
+    sys.exit(1)
+
+try:
+    from sh import unpaper  # noqa
+except ImportError:
+    print('Error: unpaper command not found. Please install unpaper.')
+    sys.exit(1)
 
 
 logger = logging.getLogger('pydigitize')
