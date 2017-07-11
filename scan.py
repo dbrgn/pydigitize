@@ -3,7 +3,7 @@
 """pydigitize.
 
 Usage:
-    scan.py -o OUTPUT [options]
+    scan.py OUTPUT [options]
 
 Options:
     -h --help      Show this help.
@@ -13,7 +13,6 @@ Options:
     -r RESOLUTION  Set the resolution [default: 300].
 
     -p PAGES       Number of pages to scan [default: all pages from ADF]
-    -o OUTPUT      Output file or directory
 
     --verbose      Verbose output
     --debug        Debug output
@@ -26,11 +25,8 @@ import os.path
 import logging
 
 import docopt
-from sh import cd, mkdir, scanimage, tiffcp, tiff2pdf, mv
-import sh
+from sh import cd, mkdir, scanimage, tiffcp, tiff2pdf, mv, ocrmypdf
 
-
-ocrmypdf = getattr(sh, 'OCRmyPDF.sh')
 
 logger = logging.getLogger('pydigitize')
 
@@ -70,12 +66,13 @@ class Scan:
 
         # Validate and store output path
         if os.path.isdir(output):
-            self.output_path = os.path.join(output, TIMESTAMP + '.pdf')
-        elif os.path.isdir(os.path.dirname(output)):
-            self.output_path = output
+            output_path = os.path.join(output, TIMESTAMP + '.pdf')
+        elif os.path.dirname(output) == '' or os.path.isdir(os.path.dirname(output)):
+            output_path = output
         else:
             print('Output directory must already exist.')
             sys.exit(1)
+        self.output_path = os.path.abspath(output_path)
         logger.debug('Output path: %s', self.output_path)
 
     def prepare_directories(self):
@@ -128,10 +125,10 @@ class Scan:
 
     def do_ocr(self):
         """
-        Do character recognition (OCR) with ``OCRmyPDF.sh``.
+        Do character recognition (OCR) with ``ocrmypdf``.
         """
         print('Running OCR...')
-        ocrmypdf('-l', 'deu', '-o', self.resolution, '-d', '-c', 'output.pdf', 'clean.pdf')
+        ocrmypdf('-l', 'deu', '-d', '-c', 'output.pdf', 'clean.pdf')
 
     def process(self):
         # Prepare directories
@@ -169,5 +166,5 @@ if __name__ == '__main__':
     logger.debug('Command line args: %r' % args)
     default_output = os.path.join(OUTPUT_BASE, TIMESTAMP)
 
-    scan = Scan(resolution=args['-r'], device=args['-d'], output=args['-o'] or default_output)
+    scan = Scan(resolution=args['-r'], device=args['-d'], output=args['OUTPUT'] or default_output)
     scan.process()
