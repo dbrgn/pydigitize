@@ -19,6 +19,7 @@ Options:
     -p PROFILE     The profile to use.
 
     -n NAME        Text that will be incorporated into the filename.
+    -t DATE        Use the specified date string (format: YYYYMMDD)
     -k KEYWORDS    Comma separated keywords that will be added to the PDF metadata.
 
     -d DEVICE      Set the device [default: brother4:net1;dev0].
@@ -35,6 +36,7 @@ import datetime
 import glob
 import logging
 import os.path
+import re
 import sys
 import tempfile
 
@@ -79,7 +81,6 @@ logger = logging.getLogger('pydigitize')
 
 VALID_RESOLUTIONS = (100, 200, 300, 400, 600)
 START_TIME = datetime.datetime.now()
-TIMESTAMP = START_TIME.strftime('%Y%m%d-%H%M%S')
 
 
 def prefix():
@@ -89,7 +90,7 @@ def prefix():
 
 class Scan:
 
-    def __init__(self, *, resolution, device, output, name=None, keywords=None):
+    def __init__(self, *, resolution, device, output, name=None, datestring=None, keywords=None):
         """
         Initialize scan class.
 
@@ -119,12 +120,19 @@ class Scan:
         # Store keywords
         self.keywords = set() if keywords is None else set(keywords)
 
+        # Validate and set timestamp
+        if datestring is None:
+            timestamp = START_TIME.strftime('%Y%m%d-%H%M%S')
+        else:
+            datestring = re.sub(r'[^0-9]', '', datestring)
+            timestamp = datestring or START_TIME.strftime('%Y%m%d-%H%M%S')
+
         # Validate and store output path
         if os.path.isdir(output):
             if name is None:
-                filename = '{}.pdf'.format(TIMESTAMP)
+                filename = '{}.pdf'.format(timestamp)
             else:
-                filename = '{}-{}.pdf'.format(TIMESTAMP, slugify(name, to_lower=True))
+                filename = '{}-{}.pdf'.format(timestamp, slugify(name, to_lower=True))
             output_path = os.path.join(output, filename)
         elif os.path.dirname(output) == '' or os.path.isdir(os.path.dirname(output)):
             output_path = output
@@ -276,6 +284,8 @@ if __name__ == '__main__':
         skip_ocr = True
     if args['-n']:
         kwargs['name'] = args['-n']
+    if args['-t']:
+        kwargs['datestring'] = args['-t']
     if args['-k']:
         keywords = [k.strip() for k in args.get('-k', '').split(',')]
         kwargs['keywords'].update(keywords)
