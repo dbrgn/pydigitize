@@ -16,6 +16,7 @@ Options:
     -p PROFILE     The profile to use.
 
     -n NAME        Text that will be incorporated into the filename.
+    -k KEYWORDS    Comma separated keywords that will be added to the PDF metadata.
 
     -d DEVICE      Set the device [default: brother4:net1;dev0].
     -r RESOLUTION  Set the resolution [default: 300].
@@ -79,7 +80,7 @@ TIMESTAMP = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 
 class Scan:
 
-    def __init__(self, *, resolution, device, output, name=None):
+    def __init__(self, *, resolution, device, output, name=None, keywords=None):
         """
         Initialize scan class.
 
@@ -88,6 +89,7 @@ class Scan:
         - resolution
         - device
         - output_path
+        - keywords
 
         """
         # Validate and store resolution
@@ -104,6 +106,9 @@ class Scan:
 
         # Store device
         self.device = device
+
+        # Store keywords
+        self.keywords = set() if keywords is None else set(keywords)
 
         # Validate and store output path
         if os.path.isdir(output):
@@ -173,7 +178,11 @@ class Scan:
         Do character recognition (OCR) with ``ocrmypdf``.
         """
         print('Running OCR...')
-        ocrmypdf('-l', 'deu', '-d', '-c', 'output.pdf', 'clean.pdf')
+        args = ['-l', 'deu', '-d', '-c']
+        if self.keywords:
+            args.extend(['--keywords', ','.join(self.keywords)])
+        args.extend(['output.pdf', 'clean.pdf'])
+        ocrmypdf(*args)
 
     def process(self, *, skip_ocr=False):
         # Prepare directories
@@ -218,6 +227,7 @@ if __name__ == '__main__':
     # Default args
     kwargs = {
         'output': default_output,
+        'keywords': {'pydigitize'},
     }
     skip_ocr = False
 
@@ -245,6 +255,8 @@ if __name__ == '__main__':
             kwargs['name'] = profile['name']
         if 'ocr' in profile:
             skip_ocr = not bool(profile['ocr'])
+        if 'keywords' in profile:
+            kwargs['keywords'].update(profile['keywords'])
 
     # Argument overrides
     kwargs['resolution'] = args['-r']
@@ -253,6 +265,9 @@ if __name__ == '__main__':
         kwargs['output'] = args['OUTPUT']
     if args['--skip-ocr'] is True:
         skip_ocr = True
+    if args['-k']:
+        keywords = [k.strip() for k in args.get('-k', '').split(',')]
+        kwargs['keywords'].update(keywords)
 
     scan = Scan(**kwargs)
     scan.process(skip_ocr=skip_ocr)

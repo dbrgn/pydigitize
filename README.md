@@ -22,6 +22,7 @@ For every profile you can specify the following parameters:
 - `path`: The output directory
 - `name`: Set a string that will be included in every filename in slugified form
 - `ocr`: Whether to run OCR, straightening and cleanup on the scanned document
+- `keywords`: List of keywords that will be added to PDF Metadata
 
 You can also create sub-profiles. They inherit the settings from the parent.
 
@@ -32,9 +33,11 @@ Example:
 path = "/home/user/bills/"
 name = "bill"
 ocr = true
+keywords = ["bill"]
 
 [bill.dentist]
 name = "dentist"
+keywords = ["bill", "dentist"]
 
 [drawing]
 path = "/home/user/drawings/"
