@@ -1,5 +1,7 @@
 # pydigitize
 
+![Example screenshot](example.png)
+
 Requirements:
 
 - Python 3.x
