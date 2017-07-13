@@ -7,7 +7,10 @@ Usage:
 Examples:
     scan.py out/
     scan.py out/document.pdf
-    scan.py out/ -n document
+    scan.py out/ -n document -k foo,bar
+
+Args:
+    OUTPUT         This can either be a filename or a directory name.
 
 Options:
     -h --help      Show this help.
@@ -33,6 +36,7 @@ import glob
 import logging
 import os.path
 import sys
+import tempfile
 
 import docopt
 from sh import cd, mkdir, mv
@@ -135,8 +139,7 @@ class Scan:
 
         """
         print('Creating temporary directory...')
-        self.workdir = os.path.join(OUTPUT_BASE, TIMESTAMP)
-        mkdir(self.workdir, parents=True)
+        self.workdir = tempfile.mkdtemp(prefix='pydigitize-')
 
     def scan_pages(self):
         """
@@ -222,7 +225,8 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(level=logging.WARNING)
     logger.debug('Command line args: %r' % args)
-    default_output = os.path.join(OUTPUT_BASE, TIMESTAMP)
+
+    default_output = tempfile.mkdtemp(prefix='pydigitize-', suffix='-out')
 
     # Default args
     kwargs = {
