@@ -78,8 +78,13 @@ logger = logging.getLogger('pydigitize')
 
 
 VALID_RESOLUTIONS = (100, 200, 300, 400, 600)
-OUTPUT_BASE = '/home/danilo/brscan'
-TIMESTAMP = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+START_TIME = datetime.datetime.now()
+TIMESTAMP = START_TIME.strftime('%Y%m%d-%H%M%S')
+
+
+def prefix():
+    duration = (datetime.datetime.now() - START_TIME).total_seconds()
+    return '\033[92m\033[1m+\033[0m [{0:>5.2f}s] '.format(duration)
 
 
 class Scan:
@@ -138,14 +143,14 @@ class Scan:
         - workdir
 
         """
-        print('Creating temporary directory...')
+        print(prefix() + 'Creating temporary directory...')
         self.workdir = tempfile.mkdtemp(prefix='pydigitize-')
 
     def scan_pages(self):
         """
         Scan pages using ``scanimage``.
         """
-        print('Scanning...')
+        print(prefix() + 'Scanning...')
         scanimage_args = {
             'x': 210, 'y': 297,
             'device_name': self.device,
@@ -161,7 +166,7 @@ class Scan:
         """
         Combine tiffs into single multi-page tiff.
         """
-        print('Combining image files...')
+        print(prefix() + 'Combining image files...')
         files = sorted(glob.glob('out*.tif'))
         logger.debug('Joining %r', files)
         tiffcp(files, 'output.tif', c='lzw')
@@ -173,14 +178,14 @@ class Scan:
         TODO: use convert instead?
 
         """
-        print('Converting to PDF...')
+        print(prefix() + 'Converting to PDF...')
         tiff2pdf('output.tif', p='A4', o='output.pdf')
 
     def do_ocr(self):
         """
         Do character recognition (OCR) with ``ocrmypdf``.
         """
-        print('Running OCR...')
+        print(prefix() + 'Running OCR...')
         args = ['-l', 'deu', '-d', '-c']
         if self.keywords:
             args.extend(['--keywords', ','.join(self.keywords)])
@@ -209,11 +214,11 @@ class Scan:
             filename = 'output.pdf'
 
         # Move file
-        print('Moving resulting file...')
+        print(prefix() + 'Moving resulting file...')
         cd('..')
         mv('{}/{}'.format(self.workdir, filename), self.output_path)
 
-        print('Done: %s' % self.output_path)
+        print('\nDone: %s' % self.output_path)
 
 
 if __name__ == '__main__':
@@ -272,6 +277,10 @@ if __name__ == '__main__':
     if args['-k']:
         keywords = [k.strip() for k in args.get('-k', '').split(',')]
         kwargs['keywords'].update(keywords)
+
+    print('                           ____')
+    print('  ________________________/ O  \___/')
+    print(' <_/_\_/_\_/_\_/_\_/_\_/_______/   \\\n')
 
     scan = Scan(**kwargs)
     scan.process(skip_ocr=skip_ocr)
