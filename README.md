@@ -2,7 +2,24 @@
 
 ![Example screenshot](example.png)
 
-Requirements:
+## Features
+
+pydigitize is a simple command-line based tool to scan/archive documents.
+
+It does the following steps:
+
+- Scan a document with any scanner that supports SANE (ADF supported)
+- Straightening and cleaning of scanned documents
+- Run OCR on PDF so that it becomes searchable
+- Add keywords to the PDF file
+
+Because you don't want to type the same arguments for every piece of paper that
+you scan, pydigitize supports profiles: A profile pre-configures settings like
+the output directory, the resolution, whether to run OCR, additional PDF
+keywords, etc. You can create a profile for all your invoices for example. Then
+every time you get an invoice, you scan it with `./scan.py -p invoice`, done.
+
+## Requirements
 
 - Python 3.x
 - OCRmyPDF 3.x
