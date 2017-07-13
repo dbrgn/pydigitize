@@ -274,6 +274,8 @@ if __name__ == '__main__':
         kwargs['output'] = args['OUTPUT']
     if args['--skip-ocr'] is True:
         skip_ocr = True
+    if args['-n']:
+        kwargs['name'] = args['-n']
     if args['-k']:
         keywords = [k.strip() for k in args.get('-k', '').split(',')]
         kwargs['keywords'].update(keywords)
