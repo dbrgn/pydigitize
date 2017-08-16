@@ -254,6 +254,22 @@ if __name__ == '__main__':
         with open('profiles.toml', 'r') as conffile:
             profiles = toml.loads(conffile.read())
 
+        # Create list of all profiles
+        all_profiles = []
+
+        def _parse_profile(k, v, prefix=None):
+            if isinstance(v, dict):
+                if prefix is None:
+                    new_prefix = k
+                else:
+                    new_prefix = '%s.%s' % (prefix, k)
+                all_profiles.append(new_prefix)
+                for kk, vv in v.items():
+                    _parse_profile(kk, vv, new_prefix)
+
+        for k, v in profiles.items():
+            _parse_profile(k, v)
+
         # Find profile
         profile = profiles
         profile_name = args['-p']
@@ -262,6 +278,9 @@ if __name__ == '__main__':
             found = profile.get(part)
             if found is None:
                 print('Profile not found: {}'.format(profile_name))
+                print('\nAvailable profiles:')
+                for name in sorted(all_profiles):
+                    print(' - %s' % name)
                 sys.exit(1)
             profile = found
 
