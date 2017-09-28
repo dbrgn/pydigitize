@@ -137,7 +137,7 @@ class Scan:
         elif os.path.dirname(output) == '' or os.path.isdir(os.path.dirname(output)):
             output_path = output
         else:
-            print('Output directory must already exist.')
+            print('Output directory "{}" must already exist.'.format(output))
             sys.exit(1)
         self.output_path = os.path.abspath(output_path)
         logger.debug('Output path: %s', self.output_path)
