@@ -349,11 +349,14 @@ if __name__ == '__main__':
         keywords = [k.strip() for k in args.get('-k', '').split(',')]
         kwargs['keywords'].update(keywords)
     if args['-c']:
-        try:
-            kwargs['count'] = int(args['-c'])
-        except ValueError:
-            print('Invalid argument to "-c" - must be numeric!')
-            sys.exit(1)
+        if args['-c'] == 'all pages from ADF':
+            kwargs['count'] = None
+        else:
+            try:
+                kwargs['count'] = int(args['-c'])
+            except ValueError:
+                print('Invalid argument to "-c": %r -> must be numeric!' % args['-c'])
+                sys.exit(1)
     kwargs['nowait'] = args['--nowait']
 
     print('                           ____')
