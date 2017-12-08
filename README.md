@@ -71,3 +71,15 @@ parameter.
 You can of course override your parameters:
 
     ./scan.py -p bill -n amazon
+
+## Interactive Scanning
+
+If you want to scan a specific number of pages, use the `-c` argument.
+
+Pydigitize will prompt you to confirm before scanning every page. This is very
+useful for example when scanning double-sided documents on a scanner that does
+not have a duplex unit, or when scanning a document partially in the ADF and
+partially on the flatbed.
+
+If you don't want manual confirmation, but just want the scanner to scan as
+fast as it can, use the `--noconfirm` argument.

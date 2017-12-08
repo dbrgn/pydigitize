@@ -27,6 +27,9 @@ Options:
     -c PAGES       Page count to scan [default: all pages from ADF]
 
     --skip-ocr     Don't run OCR / straightening / cleanup step.
+    --nowait       When scanning multiple pages (with the -c parameter), don't
+                   wait for manual confirmation but scan as fast as the scanner
+                   can process the pages.
 
     --verbose      Verbose output
     --debug        Debug output
@@ -41,7 +44,7 @@ import sys
 import tempfile
 
 import docopt
-from sh import cd, mkdir, mv
+from sh import cd, mv
 from slugify import slugify
 import toml
 
@@ -90,7 +93,16 @@ def prefix():
 
 class Scan:
 
-    def __init__(self, *, resolution, device, output, name=None, datestring=None, keywords=None):
+    def __init__(self, *,
+        resolution,
+        device,
+        output,
+        name: str = None,
+        datestring: str = None,
+        keywords: str = None,
+        count: int = None,
+        nowait: bool = False
+    ):
         """
         Initialize scan class.
 
@@ -100,6 +112,7 @@ class Scan:
         - device
         - output_path
         - keywords
+        - count
 
         """
         # Validate and store resolution
@@ -142,6 +155,10 @@ class Scan:
         self.output_path = os.path.abspath(output_path)
         logger.debug('Output path: %s', self.output_path)
 
+        # Store page count
+        self.count = count
+        self.nowait = nowait
+
     def prepare_directories(self):
         """
         Prepare the temporary output directories.
@@ -158,17 +175,39 @@ class Scan:
         """
         Scan pages using ``scanimage``.
         """
-        print(prefix() + 'Scanning...')
-        scanimage_args = {
-            'x': 210, 'y': 297,
-            'device_name': self.device,
-            'batch': True,
-            'format': 'tiff',
-            'resolution': self.resolution,
-            '_ok_code': [0, 7],
-        }
-        logger.debug('Scanimage args: %r' % scanimage_args)
-        scanimage(**scanimage_args)
+        def _scan_page(number: int = None):
+            if number is None:
+                print(prefix() + 'Scanning all pages...')
+            else:
+                print(prefix() + 'Scanning page %d/%d...' % (number + 1, self.count))
+            scanimage_args = {
+                'x': 210, 'y': 297,
+                'device_name': self.device,
+                'batch': True,
+                'format': 'tiff',
+                'resolution': self.resolution,
+                '_ok_code': [0, 7],
+            }
+            if number is not None:
+                scanimage_args['batch-start'] = number
+                scanimage_args['batch-count'] = 1
+            logger.debug('Scanimage args: %r' % scanimage_args)
+
+            scanimage(**scanimage_args)
+
+        if self.count:
+            for i in range(self.count):
+                _scan_page(i)
+                if not self.nowait and i < (self.count - 1):
+                    try:
+                        msg = 'Press <ENTER> to scan page %d (or <CTRL+C> to abort)'
+                        input(prefix() + msg % (i + 2))
+                    except KeyboardInterrupt:
+                        print()
+                        print(prefix() + 'Aborting.')
+                        sys.exit(1)
+        else:
+            _scan_page(None)
 
     def combine_tiffs(self):
         """
@@ -237,6 +276,7 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.INFO)
     else:
         logging.basicConfig(level=logging.WARNING)
+
     logger.debug('Command line args: %r' % args)
 
     default_output = tempfile.mkdtemp(prefix='pydigitize-', suffix='-out')
@@ -308,6 +348,13 @@ if __name__ == '__main__':
     if args['-k']:
         keywords = [k.strip() for k in args.get('-k', '').split(',')]
         kwargs['keywords'].update(keywords)
+    if args['-c']:
+        try:
+            kwargs['count'] = int(args['-c'])
+        except ValueError:
+            print('Invalid argument to "-c" - must be numeric!')
+            sys.exit(1)
+    kwargs['nowait'] = args['--nowait']
 
     print('                           ____')
     print('  ________________________/ O  \___/')
