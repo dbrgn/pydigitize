@@ -83,4 +83,4 @@ not have a duplex unit, or when scanning a document partially in the ADF and
 partially on the flatbed.
 
 If you don't want manual confirmation, but just want the scanner to scan as
-fast as it can, use the `--noconfirm` argument.
+fast as it can, use the `--nowait` argument.
