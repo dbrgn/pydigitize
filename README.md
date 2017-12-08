@@ -11,6 +11,7 @@ It does the following steps:
 - Scan a document with any scanner that supports SANE (ADF supported)
 - Straightening and cleaning of scanned documents
 - Run OCR on PDF so that it becomes searchable
+- Generate [PDF/A](https://en.wikipedia.org/wiki/PDF/a) file for archival
 - Add keywords to the PDF file
 
 Because you don't want to type the same arguments for every piece of paper that
@@ -72,11 +73,11 @@ You can of course override your parameters:
 
     ./scan.py -p bill -n amazon
 
-## Interactive Scanning
+## Interactive (Batch) Scanning
 
 If you want to scan a specific number of pages, use the `-c` argument.
 
-Pydigitize will prompt you to confirm before scanning every page. This is very
+pydigitize will prompt you to confirm before scanning every page. This is very
 useful for example when scanning double-sided documents on a scanner that does
 not have a duplex unit, or when scanning a document partially in the ADF and
 partially on the flatbed.
