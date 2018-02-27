@@ -22,7 +22,7 @@ Options:
     -t DATE        Use the specified date string (format: YYYYMMDD)
     -k KEYWORDS    Comma separated keywords that will be added to the PDF metadata.
 
-    -d DEVICE      Set the device [default: brother4:net1;dev0].
+    -d DEVICE      Set the device.
     -r RESOLUTION  Set the resolution [default: 300].
     -c PAGES       Page count to scan [default: all pages from ADF]
 
@@ -182,12 +182,13 @@ class Scan:
                 print(prefix() + 'Scanning page %d/%d...' % (number + 1, self.count))
             scanimage_args = {
                 'x': 210, 'y': 297,
-                'device_name': self.device,
                 'batch': True,
                 'format': 'tiff',
                 'resolution': self.resolution,
                 '_ok_code': [0, 7],
             }
+            if self.device is not None:
+                scanimage_args['device_name'] = self.device
             if number is not None:
                 scanimage_args['batch-start'] = number
                 scanimage_args['batch-count'] = 1
