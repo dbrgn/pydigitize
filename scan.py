@@ -182,7 +182,8 @@ class Scan:
                 print(prefix() + 'Scanning page %d/%d...' % (number + 1, self.count))
             scanimage_args = {
                 'x': 210, 'y': 297,
-                'batch': True,
+                'batch': 'out%d.tif',
+                'batch-start': '1000',  # Avoid issues with sorting (e.g. out10 < out2)
                 'format': 'tiff',
                 'resolution': self.resolution,
                 '_ok_code': [0, 7],
