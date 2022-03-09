@@ -23,9 +23,9 @@ every time you get an invoice, you scan it with `./scan.py -p invoice`, done.
 ## Requirements
 
 - Python 3.x
-- OCRmyPDF 3.x
-- libtiff 4.x
-- sane 1.x
+- OCRmyPDF
+- libtiff
+- sane
 - unpaper
 
 ## Usage
