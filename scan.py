@@ -26,6 +26,7 @@ Options:
     -r RESOLUTION  Set the resolution [default: 300].
     -c PAGES       Page count to scan [default: all pages from ADF]
 
+    --no-adf       Don't use ADF. By default, ADF is used.
     --skip-ocr     Don't run OCR / straightening / cleanup step.
     --nowait       When scanning multiple pages (with the -c parameter), don't
                    wait for manual confirmation but scan as fast as the scanner
@@ -101,7 +102,8 @@ class Scan:
         datestring: str = None,
         keywords: str = None,
         count: int = None,
-        nowait: bool = False
+        nowait: bool = False,
+        adf: bool = True,
     ):
         """
         Initialize scan class.
@@ -155,6 +157,9 @@ class Scan:
         self.output_path = os.path.abspath(output_path)
         logger.debug('Output path: %s', self.output_path)
 
+        # ADF
+        self.adf = adf
+
         # Store page count
         self.count = count
         self.nowait = nowait
@@ -188,6 +193,7 @@ class Scan:
                 'resolution': self.resolution,
                 '_ok_code': [0, 7],
             }
+            scanimage_args['source'] = 'ADF' if self.adf else 'Flatbed'
             if self.device is not None:
                 scanimage_args['device_name'] = self.device
             if number is not None:
@@ -341,6 +347,8 @@ if __name__ == '__main__':
     kwargs['device'] = args['-d']
     if args['OUTPUT']:
         kwargs['output'] = args['OUTPUT']
+    if args['--no-adf'] is True:
+        kwargs['adf'] = False
     if args['--skip-ocr'] is True:
         skip_ocr = True
     if args['-n']:
