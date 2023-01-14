@@ -1,6 +1,6 @@
 docopt<=1.0
 sh<2,>=1.09
-ocrmypdf<13,>=12
+ocrmypdf<15,>=14
 awesome-slugify<2,>=1.6
 toml<1,>=0.9
 
