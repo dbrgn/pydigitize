@@ -27,6 +27,7 @@ every time you get an invoice, you scan it with `./scan.py -p invoice`, done.
 - libtiff
 - sane
 - unpaper
+- ghostscript
 
 ## Usage
 
